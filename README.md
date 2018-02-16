@@ -31,5 +31,5 @@ The output is suitable for querying via Athena. A working schema is
 The script is meant to be run daily as a Lambda function. Running `build.sh`
 will produce lambda.zip, which is ready to deploy to Lambda.
 
-You must set `PAGERDUTY_API_KEY` in the enviroment before running this script.
-Other settings exist and are documented in settings.py
+You must set `PAGERDUTY_API_KEY` and `S3_BUCKET` in the enviroment before
+running this script.  Other settings exist and are documented in settings.py

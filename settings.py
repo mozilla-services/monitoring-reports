@@ -4,8 +4,8 @@ from datetime import date
 # credential for pagerduty v2 api
 PAGERDUTY_API_KEY = os.environ['PAGERDUTY_API_KEY']
 # s3 url to upload report into
-S3_BUCKET='net-mozaws-ops-dev-monitoring-reports'
-S3_PREFIX='incidents/'
+S3_BUCKET = os.environ['S3_BUCKET']
+S3_PREFIX = 'incidents/'
 # when to anchor report and how far back to run it
 END_DATE = date.today()
 DAYS_BACK = 1
