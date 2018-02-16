@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [[ -f lambda.zip ]]; then
     rm lambda.zip
