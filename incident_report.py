@@ -8,7 +8,7 @@ from functools import lru_cache
 from os import path
 from pytz import timezone
 import boto3
-import csv
+import json
 import pypd
 
 def timerange_for_report():
@@ -108,13 +108,13 @@ def time_data(incident):
     log_entries = get_log_entries(incident)
     # put date in format athena can inteterpet
     created_at = pagerduty_datetime(incident['created_at'])
-    # athena wants timestamp to be milliseconds since epoch
-    created_at_millis = int(created_at.strftime('%s')) * 1000
+    # JSON SerDE wants timestamp to be yyyy-mm-dd hh:mm:ss[.fffffffff]
+    created_at_formatted = created_at.strftime('%Y-%m-%d %H:%M:%S')
     acknowledgement_time = first_timestamp_for_type(log_entries, 'acknowledge_log_entry')
     resolution_time = first_timestamp_for_type(log_entries, 'resolve_log_entry')
     time_to_acknowledge = seconds_since_occurred(created_at, acknowledgement_time)
     time_to_resolve = seconds_since_occurred(created_at, resolution_time)
-    return {'created_at': created_at_millis,
+    return {'created_at': created_at_formatted,
             'time_to_acknowledge': time_to_acknowledge,
             'time_to_resolve': time_to_resolve}
 
@@ -123,13 +123,13 @@ def user_data(incident):
     log_entries = get_log_entries(incident)
     users_acked = [log['agent']['summary'] for log in log_entries if log['type'] == 'acknowledge_log_entry']
     users_notified = [log['user']['summary'] for log in log_entries if log['type'] == 'notify_log_entry']
-    num_acknowledgements = len(users_acked)
+    num_acknowledgments = len(users_acked)
     # use set to dedupe so we get a count of unique users notified instead of number of notifications sent
     num_users_notified = len(set(users_notified))
     # notes are in descending chronological order, so first user in the list was the last to be notified
     user_credited = user_credited_for_incident(users_acked, users_notified)
     out_of_hours = incident_was_out_of_hours(user_credited, incident)
-    return {'num_acknowledgements': num_acknowledgements,
+    return {'num_acknowledgments': num_acknowledgments,
             'num_users_notified': num_users_notified,
             'user': user_credited,
             'out_of_hours': out_of_hours}
@@ -150,26 +150,25 @@ def generate_report(since, until):
     return rows
 
 
-def write_report(rows, output_file):
-    with open(output_file, 'w') as csvfile:
-        fieldnames = rows[0].keys()
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+def write_report(rows, output_path):
+    with open(output_path, 'w') as f:
         for row in rows:
-            writer.writerow(row)
+            # JSON SerDe wants one object per line
+            f.write("%s\n" % json.dumps(row))
 
-def upload_report(output_file):
-    s3_name = "%s%s" % (settings.S3_PREFIX, path.basename(output_file))
+def upload_report(output_path):
+    s3_name = "%s%s" % (settings.S3_PREFIX, path.basename(output_path))
     s3 = boto3.client('s3')
-    s3.upload_file(output_file, settings.S3_BUCKET, s3_name)
+    s3.upload_file(output_path, settings.S3_BUCKET, s3_name)
 
 
 def lambda_handler(event, context):
     pypd.api_key = settings.PAGERDUTY_API_KEY
     since, until = timerange_for_report()
-    output_file = '/tmp/%s.csv' % since
+    output_path = '/tmp/%s.json' % since
     rows = generate_report(since, until)
-    write_report(rows, output_file)
-    upload_report(output_file)
+    write_report(rows, output_path)
+    upload_report(output_path)
 
 
 if __name__ == '__main__':
