@@ -1,17 +1,28 @@
 #!/bin/bash
 set -e
+set -x
 
-if [[ -f lambda.zip ]]; then
-    rm lambda.zip
+REPORT=$1
+CODE="${REPORT}/${REPORT}_report.py"
+WORKDIR="${REPORT}-lambda"
+ARTIFACT="${REPORT}-lambda.zip"
+
+if [[ ! -f $CODE ]]; then
+    echo Cannot find $CODE
+    exit 1
 fi
 
-if [[ -d lambda ]]; then
-    rm -r lambda
+if [[ -f $ARTIFACT ]]; then
+    rm $ARTIFACT
 fi
 
-mkdir lambda
+if [[ -d $WORKDIR ]]; then
+    rm -r $WORKDIR
+fi
 
-PIP_CMD='pip3 install -r requirements.txt -t lambda/'
+mkdir $WORKDIR
+
+PIP_CMD="pip3 install -r $REPORT/requirements.txt -t $WORKDIR/"
 
 if command -v pip3 >/dev/null; then
     $PIP_CMD
@@ -22,7 +33,7 @@ else
     exit 1
 fi
 
-cp incident_report.py settings.py lambda/
+cp $CODE $REPORT/settings.py $WORKDIR/
 
-cd lambda
-zip -r9 ../lambda.zip .
+cd $WORKDIR
+zip -r9 ../$ARTIFACT .

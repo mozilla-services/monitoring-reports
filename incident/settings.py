@@ -2,7 +2,7 @@ import os
 from datetime import date
 
 # credential for pagerduty v2 api
-PAGERDUTY_API_KEY = os.environ['PAGERDUTY_API_KEY']
+API_KEY = os.environ['API_KEY']
 # s3 url to upload report into
 S3_BUCKET = os.environ['S3_BUCKET']
 S3_PREFIX = 'incidents/'
