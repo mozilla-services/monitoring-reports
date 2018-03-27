@@ -1,17 +1,23 @@
 #!/bin/bash
 set -e
+set -x
 
-if [[ -f lambda.zip ]]; then
-    rm lambda.zip
+REPORT=$1
+CODE="${REPORT}/${REPORT}_report.py"
+WORKDIR="${REPORT}_lambda"
+ARTIFACT="${REPORT}.zip"
+
+if [[ -f $ARTIFACT ]]; then
+    rm $ARTIFACT
 fi
 
-if [[ -d lambda ]]; then
-    rm -r lambda
+if [[ -d $WORKDIR ]]; then
+    rm -r $WORKDIR
 fi
 
-mkdir lambda
+mkdir $WORKDIR
 
-PIP_CMD='pip3 install -r requirements.txt -t lambda/'
+PIP_CMD="pip3 install -r $REPORT/requirements.txt -t $WORKDIR/"
 
 if command -v pip3 >/dev/null; then
     $PIP_CMD
@@ -22,7 +28,7 @@ else
     exit 1
 fi
 
-cp incident_report.py settings.py lambda/
+cp $CODE $REPORT/settings.py $WORKDIR/
 
-cd lambda
-zip -r9 ../lambda.zip .
+cd $WORKDIR
+zip -r9 ../$ARTIFACT .
