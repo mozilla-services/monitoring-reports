@@ -1,5 +1,5 @@
 import os
-from datetime import date, timedelta
+from datetime import date
 
 # credential for statuspage v1 api
 STATUSPAGE_API_KEY = os.environ['STATUSPAGE_API_KEY']
