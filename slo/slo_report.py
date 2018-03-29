@@ -10,8 +10,8 @@ import settings
 
 
 def statuspage_request(path):
-    url = 'http://api.statuspage.io/v1/pages/%s/%s' % (settings.STATUSPAGE_PAGE_ID, path)
-    headers = {'Authorization': 'OAuth %s' % settings.STATUSPAGE_API_KEY}
+    url = 'http://api.statuspage.io/v1/pages/%s/%s' % (settings.PAGE_ID, path)
+    headers = {'Authorization': 'OAuth %s' % settings.API_KEY}
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     return r.json()

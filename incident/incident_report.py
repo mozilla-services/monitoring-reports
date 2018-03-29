@@ -163,7 +163,7 @@ def upload_report(output_path):
 
 
 def lambda_handler(event, context):
-    pypd.api_key = settings.PAGERDUTY_API_KEY
+    pypd.api_key = settings.API_KEY
     since, until = timerange_for_report()
     output_path = '/tmp/%s.json' % since
     rows = generate_report(since, until)
