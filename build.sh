@@ -4,8 +4,13 @@ set -x
 
 REPORT=$1
 CODE="${REPORT}/${REPORT}_report.py"
-WORKDIR="${REPORT}_lambda"
-ARTIFACT="${REPORT}.zip"
+WORKDIR="${REPORT}-lambda"
+ARTIFACT="${REPORT}-lambda.zip"
+
+if [[ ! -f $CODE ]]; then
+    echo Cannot find $CODE
+    exit 1
+fi
 
 if [[ -f $ARTIFACT ]]; then
     rm $ARTIFACT
