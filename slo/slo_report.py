@@ -30,8 +30,13 @@ def incident_is_ongoing(i):
 
 
 def skip_incident(i):
+    # skip ongoing incidents
     if i['resolved_at'] is None:
         return True
+    # skip incidents flagged as false positive in their postmortem
+    if i['postmortem_body'] and 'false positive' in i['postmortem_body'].lower():
+        return True
+    # skip incidents that aren't for the day are configured to report on
     report_day = settings.DATE_FOR_REPORT
     resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%SZ')
     resolved = timezone('UTC').localize(resolved)
