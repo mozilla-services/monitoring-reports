@@ -33,7 +33,7 @@ def skip_incident(i):
     if i['resolved_at'] is None:
         return True
     report_day = settings.DATE_FOR_REPORT
-    resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%SZ')
     resolved = timezone('UTC').localize(resolved)
     resolved_day = resolved.date()
     if resolved_day == report_day:
@@ -43,8 +43,8 @@ def skip_incident(i):
 
 
 def calculate_incident_duration(i):
-    created = datetime.strptime(i['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-    resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    created = datetime.strptime(i['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+    resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%SZ')
     delta = resolved - created
     return delta.total_seconds()
 
