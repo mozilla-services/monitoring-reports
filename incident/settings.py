@@ -13,6 +13,6 @@ DAYS_BACK = 1
 START_OF_DAY = 9
 END_OF_DAY = 17
 # if any of these are a susbtring of the service name, exclude it
-SERVICE_NAMES_TO_EXCLUDE = ['Remote access monitoring']
+SERVICE_NAMES_TO_EXCLUDE = ['Out of hours', 'Remote access monitoring']
 # set to true to only report on high urgency incidents
 EXCLUDE_LOW_URGENCY = True
