@@ -11,13 +11,11 @@ import boto3
 import json
 import pypd
 
-def timerange_for_report():
-    days = settings.DAYS_BACK
+def datepairs_for_report():
+    days_back = settings.DAYS_BACK
     today = settings.END_DATE
-    start_day = today - timedelta(days=days)
-    until = today.strftime('%Y-%m-%d')
-    since = start_day.strftime('%Y-%m-%d')
-    return (since, until)
+    first_day = today - timedelta(days=days_back)
+    return ((first_day + timedelta(n), first_day + timedelta(n+1)) for n in range(days_back))
 
 
 def get_incidents(since, until):
@@ -35,6 +33,7 @@ def get_log_entries(incident):
 def get_users_timezones():
     users = pypd.User.find()
     timezone_by_user = {user['name']: timezone(user['time_zone']) for user in users}
+    timezone_by_user['Adrian Utrilla'] = timezone('Europe/Berlin')
     return timezone_by_user
 
 
@@ -164,11 +163,11 @@ def upload_report(output_path):
 
 def lambda_handler(event, context):
     pypd.api_key = settings.API_KEY
-    since, until = timerange_for_report()
-    output_path = '/tmp/%s.json' % since
-    rows = generate_report(since, until)
-    write_report(rows, output_path)
-    upload_report(output_path)
+    for since, until in datepairs_for_report():
+        output_path = '/tmp/%s.json' % since
+        rows = generate_report(since, until)
+        write_report(rows, output_path)
+        upload_report(output_path)
 
 
 if __name__ == '__main__':
