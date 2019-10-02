@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import path
 from pytz import timezone
 import boto3
 import json
 import requests
 import settings
+
+def timerange_for_report():
+    start_date = settings.START_DATE
+    end_date = settings.END_DATE
+    for n in range(int ((end_date - start_date).days)):
+        yield start_date + timedelta(n)
 
 
 def statuspage_request(path):
@@ -22,14 +28,14 @@ def get_components():
 
 
 def get_incidents():
-        return statuspage_request('incidents.json')
+    return statuspage_request('incidents.json')
 
 
 def incident_is_ongoing(i):
     return i['status'] != 'resolved'
 
 
-def skip_incident(i):
+def skip_incident(i, report_day):
     # skip ongoing incidents
     if i['resolved_at'] is None:
         return True
@@ -37,7 +43,6 @@ def skip_incident(i):
     if i['postmortem_body'] and 'false positive' in i['postmortem_body'].lower():
         return True
     # skip incidents that aren't for the day are configured to report on
-    report_day = settings.DATE_FOR_REPORT
     resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
     resolved = timezone('UTC').localize(resolved)
     resolved_day = resolved.date()
@@ -54,10 +59,10 @@ def calculate_incident_duration(i):
     return delta.total_seconds()
 
 
-def find_downtimes_by_component(components, incidents):
+def find_downtimes_by_component(components, incidents, day):
     downtimes_by_component = {c['name']: [] for c in components}
     for i in incidents:
-        if skip_incident(i):
+        if skip_incident(i, day):
             continue
         duration = calculate_incident_duration(i)
         for c in i['components']:
@@ -65,10 +70,10 @@ def find_downtimes_by_component(components, incidents):
     return downtimes_by_component
 
 
-def generate_report(downtimes_by_component):
+def generate_report(downtimes_by_component, day):
     rows = []
     # JSON SerDE wants timestamp to be yyyy-mm-dd hh:mm:ss[.fffffffff
-    day = (settings.DATE_FOR_REPORT).strftime('%Y-%m-%d %H:%M:%S')
+    day = day.strftime('%Y-%m-%d %H:%M:%S')
     for name, downtimes in downtimes_by_component.items():
         total_downtime = sum(downtimes)
         downtime_percentage = (total_downtime / (24 * 60 * 60)) * 100
@@ -93,13 +98,16 @@ def upload_report(output_path):
 
 
 def lambda_handler(event, context):
-    output_path = '/tmp/%s.json' % (settings.DATE_FOR_REPORT).strftime('%Y-%m-%d')
     components = get_components()
     incidents = get_incidents()
-    downtimes_by_component = find_downtimes_by_component(components, incidents)
-    rows = generate_report(downtimes_by_component)
-    write_report(rows, output_path)
-    upload_report(output_path)
+    for day in timerange_for_report():
+        display_day = day.strftime('%Y-%m-%d')
+        print('generating %s' % display_day)
+        output_path = '/tmp/%s.json' % display_day
+        downtimes_by_component = find_downtimes_by_component(components, incidents, day)
+        rows = generate_report(downtimes_by_component, day)
+        write_report(rows, output_path)
+        upload_report(output_path)
 
 
 if __name__ == '__main__':
