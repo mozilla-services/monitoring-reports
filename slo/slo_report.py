@@ -28,7 +28,7 @@ def get_components():
 
 
 def get_incidents():
-        return statuspage_request('incidents.json')
+    return statuspage_request('incidents.json')
 
 
 def incident_is_ongoing(i):
@@ -101,7 +101,9 @@ def lambda_handler(event, context):
     components = get_components()
     incidents = get_incidents()
     for day in timerange_for_report():
-        output_path = '/tmp/%s.json' % (day).strftime('%Y-%m-%d')
+        display_day = day.strftime('%Y-%m-%d')
+        print('generating %s' % display_day)
+        output_path = '/tmp/%s.json' % display_day
         downtimes_by_component = find_downtimes_by_component(components, incidents, day)
         rows = generate_report(downtimes_by_component, day)
         write_report(rows, output_path)
