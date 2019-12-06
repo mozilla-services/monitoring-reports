@@ -22,9 +22,12 @@ TBLPROPERTIES ('has_encrypted_data'='false');
 
 result_configuration = {'OutputLocation': 's3://%s/setup/' % bucket}
 
-print('Creating athena table monitoring_reports.%s at s3://%s/%s with' % (prefix, bucket, prefix))
+print('Creating athena table monitoring_reports.%s at s3://%s/%s with' %
+      (prefix, bucket, prefix))
 print(table_query)
 
 client = boto3.client('athena')
-client.start_query_execution(QueryString=db_query, ResultConfiguration=result_configuration)
-client.start_query_execution(QueryString=table_query, ResultConfiguration=result_configuration)
+client.start_query_execution(QueryString=db_query,
+                             ResultConfiguration=result_configuration)
+client.start_query_execution(QueryString=table_query,
+                             ResultConfiguration=result_configuration)

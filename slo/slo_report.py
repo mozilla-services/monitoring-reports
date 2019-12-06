@@ -8,10 +8,11 @@ import json
 import requests
 import settings
 
+
 def timerange_for_report():
     start_date = settings.START_DATE
     end_date = settings.END_DATE
-    for n in range(int ((end_date - start_date).days)):
+    for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
 
@@ -40,7 +41,8 @@ def skip_incident(i, report_day):
     if i['resolved_at'] is None:
         return True
     # skip incidents flagged as false positive in their postmortem
-    if i['postmortem_body'] and 'false positive' in i['postmortem_body'].lower():
+    if i['postmortem_body'] and 'false positive' in i['postmortem_body'].lower(
+    ):
         return True
     # skip incidents that aren't for the day are configured to report on
     resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -79,8 +81,12 @@ def generate_report(downtimes_by_component, day):
         downtime_percentage = (total_downtime / (24 * 60 * 60)) * 100
         uptime_percentage = 100 - downtime_percentage
         num_outages = len(downtimes)
-        rows.append({'date': day, 'component': name, 'uptime': uptime_percentage,
-                    'num_outages': num_outages})
+        rows.append({
+            'date': day,
+            'component': name,
+            'uptime': uptime_percentage,
+            'num_outages': num_outages
+        })
     return rows
 
 
@@ -104,7 +110,8 @@ def lambda_handler(event, context):
         display_day = day.strftime('%Y-%m-%d')
         print('generating %s' % display_day)
         output_path = '/tmp/%s.json' % display_day
-        downtimes_by_component = find_downtimes_by_component(components, incidents, day)
+        downtimes_by_component = find_downtimes_by_component(
+            components, incidents, day)
         rows = generate_report(downtimes_by_component, day)
         write_report(rows, output_path)
         upload_report(output_path)
