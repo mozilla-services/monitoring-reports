@@ -30,7 +30,15 @@ def statuspage_request(path, offset=1):
 
 
 def get_components():
-    return statuspage_request('components.json')
+    components = []
+    offset = 1
+    r = statuspage_request('components.json', offset)
+    components = components + r
+    while len(r) == 100:
+        offset += 1
+        r = statuspage_request("components.json", offset)
+        components = components + r
+    return components
 
 
 def check_if_need_more_incidents(incidents):
