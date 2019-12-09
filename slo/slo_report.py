@@ -74,7 +74,7 @@ def calculate_incident_duration(i):
     created = datetime.strptime(i['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
     resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
     delta = resolved - created
-    return delta.total_seconds()
+    return int(delta.total_seconds())
 
 
 def find_groups(components):
