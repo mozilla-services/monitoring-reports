@@ -54,6 +54,9 @@ def group_incidents_by_day(incidents):
         if i['postmortem_body'] and 'false positive' in i[
                 'postmortem_body'].lower():
             continue
+        # skip incidents with no component
+        if len(i["components"]) < 1:
+            continue
         # skip incidents that aren't for a day we are configured to report on
         resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
         resolved = timezone('UTC').localize(resolved)
@@ -92,6 +95,27 @@ def generate_slo_report(downtimes_by_component, day):
     return rows
 
 
+def generate_incident_report(incidents, day):
+    rows = []
+    for i in incidents:
+        # get all updates sorted oldest to newest
+        updates = "\t".join([u["body"] for u in i["incident_updates"][::-1]])
+        updates += f'\t{i["postmortem_body"]}'
+
+        row = {
+            "name": i["name"],
+            "created_at": i["created_at"],
+            "resolved_at": i["resolved_at"],
+            "duration": calculate_incident_duration(i),
+            "component": i["components"][0]["name"],
+            "group": i["components"][0]["group_id"],
+            "impact": i["impact"],
+            "description": updates,
+        }
+        rows.append(row)
+    return rows
+
+
 def write_report(rows, output_path):
     with open(output_path, 'w') as f:
         for row in rows:
@@ -99,8 +123,9 @@ def write_report(rows, output_path):
             f.write("%s\n" % json.dumps(row))
 
 
-def upload_report(output_path, prefix):
-    s3_name = "%s%s" % (prefix, path.basename(output_path))
+def upload_report(output_path, prefix, display_day):
+    s3_name = "%s/%s.json" % (prefix, display_day)
+    #print("would upload %s to %s" % (output_path, s3_name))
     s3 = boto3.client('s3')
     s3.upload_file(output_path, settings.S3_BUCKET, s3_name)
 
@@ -112,13 +137,20 @@ def lambda_handler(event, context):
 
     for day in timerange_for_report():
         display_day = day.strftime('%Y-%m-%d')
-        print('generating %s' % display_day)
+        print('processing %s' % display_day)
+
         downtimes_by_component = find_downtimes_by_component(
             components, incidents_by_day[day])
         rows = generate_slo_report(downtimes_by_component, day)
-        output_path = '/tmp/%s.json' % display_day
+        output_path = '/tmp/slo_%s.json' % display_day
         write_report(rows, output_path)
-        upload_report(output_path, 'slo')
+        upload_report(output_path, 'slo', display_day)
+
+        rows = generate_incident_report(incidents_by_day[day], day)
+        output_path = '/tmp/incident_%s.json' % display_day
+        if rows:
+            write_report(rows, output_path)
+            upload_report(output_path, 'statuspage_incidents', display_day)
 
 
 if __name__ == '__main__':
