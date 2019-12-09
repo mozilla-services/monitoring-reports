@@ -17,9 +17,13 @@ def timerange_for_report():
         yield start_date + timedelta(n)
 
 
-def statuspage_request(path):
-    url = 'http://api.statuspage.io/v1/pages/%s/%s' % (settings.PAGE_ID, path)
-    headers = {'Authorization': 'OAuth %s' % settings.API_KEY}
+def statuspage_request(path, offset=1):
+    url = "http://api.statuspage.io/v1/pages/%s/%s/?page=%s" % (
+        settings.PAGE_ID,
+        path,
+        offset,
+    )
+    headers = {"Authorization": "OAuth %s" % settings.API_KEY}
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     return r.json()
@@ -29,8 +33,30 @@ def get_components():
     return statuspage_request('components.json')
 
 
+def check_if_need_more_incidents(incidents):
+    if len(incidents) != 100:
+        return False
+
+    earliest_resolved = datetime.strptime(incidents[-1]['resolved_at'],
+                                          '%Y-%m-%dT%H:%M:%S.%fZ')
+    earliest_resolved = timezone('UTC').localize(earliest_resolved)
+    earliest_resolved = earliest_resolved.date()
+    if earliest_resolved < settings.START_DATE:
+        return False
+
+    return True
+
+
 def get_incidents():
-    return statuspage_request('incidents.json')
+    incidents = []
+    offset = 1
+    r = statuspage_request("incidents.json", offset)
+    incidents = incidents + r
+    while check_if_need_more_incidents(r):
+        offset += 1
+        r = statuspage_request("incidents.json", offset)
+        incidents = incidents + r
+    return incidents
 
 
 def incident_is_ongoing(i):
