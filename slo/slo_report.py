@@ -44,10 +44,8 @@ def check_if_need_more_incidents(incidents):
     if len(incidents) != 100:
         return False
 
-    earliest_resolved = datetime.strptime(incidents[-1]['resolved_at'],
-                                          '%Y-%m-%dT%H:%M:%S.%fZ')
-    earliest_resolved = timezone('UTC').localize(earliest_resolved)
-    earliest_resolved = earliest_resolved.date()
+    earliest_resolved = read_statuspage_timestamp(
+        incidents[-1]['resolved_at']).date()
     if earliest_resolved < settings.START_DATE:
         return False
 
@@ -70,9 +68,19 @@ def incident_is_ongoing(i):
     return i['status'] != 'resolved'
 
 
+def read_statuspage_timestamp(timestamp):
+    dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+    return timezone('UTC').localize(dt)
+
+
+# JSON SerDE wants timestamp to be yyyy-mm-dd hh:mm:ss[.fffffffff]
+def timestamp_for_hive(dt):
+    return dt.strftime('%Y-%m-%d %H:%M:%S')
+
+
 def calculate_incident_duration(i):
-    created = datetime.strptime(i['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-    resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    created = read_statuspage_timestamp(i['created_at'])
+    resolved = read_statuspage_timestamp(i['resolved_at'])
     delta = resolved - created
     return int(delta.total_seconds())
 
@@ -99,9 +107,7 @@ def group_incidents_by_day(incidents):
         if len(i["components"]) < 1:
             continue
         # skip incidents that aren't for a day we are configured to report on
-        resolved = datetime.strptime(i['resolved_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        resolved = timezone('UTC').localize(resolved)
-        resolved_day = resolved.date()
+        resolved_day = read_statuspage_timestamp(i['resolved_at']).date()
         if resolved_day < settings.START_DATE or resolved_day > settings.END_DATE:
             continue
         # passed all our tests so include in list
@@ -120,8 +126,7 @@ def find_downtimes_by_component(components, incidents):
 
 def generate_slo_report(downtimes_by_component, day):
     rows = []
-    # JSON SerDE wants timestamp to be yyyy-mm-dd hh:mm:ss[.fffffffff
-    day = day.strftime('%Y-%m-%d %H:%M:%S')
+    day = timestamp_for_hive(day)
     for name, downtimes in downtimes_by_component.items():
         total_downtime = sum(downtimes)
         downtime_percentage = (total_downtime / (24 * 60 * 60)) * 100
@@ -144,14 +149,22 @@ def generate_incident_report(incidents, groups_by_id, day):
         updates += f'\t{i["postmortem_body"]}'
 
         row = {
-            "name": i["name"],
-            "created_at": i["created_at"],
-            "resolved_at": i["resolved_at"],
-            "duration": calculate_incident_duration(i),
-            "component": i["components"][0]["name"],
-            "group": groups_by_id[i["components"][0]["group_id"]],
-            "impact": i["impact"],
-            "description": updates,
+            "name":
+            i["name"],
+            "created_at":
+            timestamp_for_hive(read_statuspage_timestamp(i["created_at"])),
+            "resolved_at":
+            timestamp_for_hive(read_statuspage_timestamp(i["resolved_at"])),
+            "duration":
+            calculate_incident_duration(i),
+            "component":
+            i["components"][0]["name"],
+            "group":
+            groups_by_id[i["components"][0]["group_id"]],
+            "impact":
+            i["impact"],
+            "description":
+            updates,
         }
         rows.append(row)
     return rows
