@@ -1,6 +1,8 @@
 import os
 from datetime import date, timedelta
 
+# DRY_RUN to skip uploading to S3
+DRY_RUN = False
 # credential for statuspage v1 api
 API_KEY = os.environ['API_KEY']
 # id of our status page

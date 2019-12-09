@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from datetime import datetime, timedelta
-from os import path
 from pytz import timezone
 import boto3
 import json
@@ -78,6 +77,14 @@ def calculate_incident_duration(i):
     return delta.total_seconds()
 
 
+def find_groups(components):
+    groups_by_id = {}
+    for c in components:
+        if c["group"]:
+            groups_by_id[c["id"]] = c["name"]
+    return groups_by_id
+
+
 def group_incidents_by_day(incidents):
     incidents_by_day = collections.defaultdict(list)
     for i in incidents:
@@ -129,7 +136,7 @@ def generate_slo_report(downtimes_by_component, day):
     return rows
 
 
-def generate_incident_report(incidents, day):
+def generate_incident_report(incidents, groups_by_id, day):
     rows = []
     for i in incidents:
         # get all updates sorted oldest to newest
@@ -142,7 +149,7 @@ def generate_incident_report(incidents, day):
             "resolved_at": i["resolved_at"],
             "duration": calculate_incident_duration(i),
             "component": i["components"][0]["name"],
-            "group": i["components"][0]["group_id"],
+            "group": groups_by_id[i["components"][0]["group_id"]],
             "impact": i["impact"],
             "description": updates,
         }
@@ -159,13 +166,16 @@ def write_report(rows, output_path):
 
 def upload_report(output_path, prefix, display_day):
     s3_name = "%s/%s.json" % (prefix, display_day)
-    #print("would upload %s to %s" % (output_path, s3_name))
-    s3 = boto3.client('s3')
-    s3.upload_file(output_path, settings.S3_BUCKET, s3_name)
+    if settings.DRY_RUN:
+        print("would upload %s to %s" % (output_path, s3_name))
+    else:
+        s3 = boto3.client('s3')
+        s3.upload_file(output_path, settings.S3_BUCKET, s3_name)
 
 
 def lambda_handler(event, context):
     components = get_components()
+    groups_by_id = find_groups(components)
     incidents = get_incidents()
     incidents_by_day = group_incidents_by_day(incidents)
 
@@ -180,7 +190,8 @@ def lambda_handler(event, context):
         write_report(rows, output_path)
         upload_report(output_path, 'slo', display_day)
 
-        rows = generate_incident_report(incidents_by_day[day], day)
+        rows = generate_incident_report(incidents_by_day[day], groups_by_id,
+                                        day)
         output_path = '/tmp/incident_%s.json' % display_day
         if rows:
             write_report(rows, output_path)
