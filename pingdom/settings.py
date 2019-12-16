@@ -11,4 +11,4 @@ S3_PREFIX = 'pingdom/'
 # end is exclusive so skips current day
 START_DATE = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0) - timedelta(days=8)
 
-OUTPUT_PATH = "/tmp/pingdom_report.csv"
+OUTPUT_PATH = "/tmp/pingdom_report/"
