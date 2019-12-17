@@ -148,29 +148,33 @@ def generate_incident_report(incidents, groups_by_id, day):
         updates = "\t".join([u["body"] for u in i["incident_updates"][::-1]])
         updates += f'\t{i["postmortem_body"]}'
 
-        row = {
-            "name":
-            i["name"],
-            "id":
-            i["id"],
-            "created_at":
-            timestamp_for_hive(read_statuspage_timestamp(i["created_at"])),
-            "resolved_at":
-            timestamp_for_hive(read_statuspage_timestamp(i["resolved_at"])),
-            "duration":
-            calculate_incident_duration(i),
-            "component_name":
-            i["components"][0]["name"],
-            "component_id":
-            i["components"][0]["id"],
-            "group":
-            groups_by_id[i["components"][0]["group_id"]],
-            "impact":
-            i["impact"],
-            "description":
-            updates,
-        }
-        rows.append(row)
+        # some incidents may have affect multiple components
+        # create duplicate records per component in that case
+        for component in i["components"]:
+            row = {
+                "name":
+                i["name"],
+                "id":
+                i["id"],
+                "created_at":
+                timestamp_for_hive(read_statuspage_timestamp(i["created_at"])),
+                "resolved_at":
+                timestamp_for_hive(read_statuspage_timestamp(
+                    i["resolved_at"])),
+                "duration":
+                calculate_incident_duration(i),
+                "component_name":
+                component["name"],
+                "component_id":
+                component["id"],
+                "group":
+                groups_by_id[component["group_id"]],
+                "impact":
+                i["impact"],
+                "description":
+                updates,
+            }
+            rows.append(row)
     return rows
 
 
