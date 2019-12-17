@@ -167,8 +167,10 @@ def generate_incident_report(incidents, groups_by_id, day):
                 component["name"],
                 "component_id":
                 component["id"],
-                "group":
+                "group_name":
                 groups_by_id[component["group_id"]],
+                "group_id":
+                component["group_id"],
                 "impact":
                 i["impact"],
                 "description":

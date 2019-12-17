@@ -17,7 +17,8 @@ table_query = """CREATE EXTERNAL TABLE IF NOT EXISTS monitoring_reports.%s (
   `duration` int,
   `component_name` string,
   `component_id` string,
-  `group` string,
+  `group_name` string,
+  `group_id` string,
   `impact` string,
   `description` string
 )
