@@ -11,10 +11,12 @@ db_query = 'CREATE DATABASE IF NOT EXISTS monitoring_reports;'
 # Note the double escaping on the slashes
 table_query = """CREATE EXTERNAL TABLE IF NOT EXISTS monitoring_reports.%s (
   `name` string,
+  `id` string,
   `created_at` timestamp,
   `resolved_at` timestamp,
   `duration` int,
-  `component` string,
+  `component_name` string,
+  `component_id` string,
   `group` string,
   `impact` string,
   `description` string

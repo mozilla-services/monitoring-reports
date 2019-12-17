@@ -151,14 +151,18 @@ def generate_incident_report(incidents, groups_by_id, day):
         row = {
             "name":
             i["name"],
+            "id":
+            i["id"],
             "created_at":
             timestamp_for_hive(read_statuspage_timestamp(i["created_at"])),
             "resolved_at":
             timestamp_for_hive(read_statuspage_timestamp(i["resolved_at"])),
             "duration":
             calculate_incident_duration(i),
-            "component":
+            "component_name":
             i["components"][0]["name"],
+            "component_id":
+            i["components"][0]["id"],
             "group":
             groups_by_id[i["components"][0]["group_id"]],
             "impact":
