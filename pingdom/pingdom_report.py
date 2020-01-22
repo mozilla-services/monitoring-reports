@@ -14,7 +14,7 @@ BASE_URL = "https://api.pingdom.com/api/3.1"
 
 
 async def get_checks(session):
-    url = f"{BASE_URL}/checks"
+    url = f"{BASE_URL}/checks?include_tags=true"
     resp = await session.get(url)
     resp.raise_for_status()
     checks = await resp.json()
@@ -23,7 +23,8 @@ async def get_checks(session):
 
 async def get_outages(session, check_id):
     from_ = settings.START_DATE.timestamp()
-    url = f"{BASE_URL}/summary.outage/{check_id}/?from={from_}"
+    to_ = settings.END_DATE.timestamp()
+    url = f"{BASE_URL}/summary.outage/{check_id}/?from={from_}&to={to_}"
     resp = await session.get(url)
     # print(resp.headers)
     if resp.status >= 400:
@@ -62,7 +63,7 @@ class DatedCSVWriter:
 
 async def write_report(output_path):
     headers = {"Authorization": f"Bearer {settings.API_KEY}"}
-    fieldnames = ["check_id", "service", "timefrom", "timeto", "status"]
+    fieldnames = ["check_id", "service", "timefrom", "timeto", "status", "tags"]
     writer = DatedCSVWriter(output_path, fieldnames=fieldnames)
     async with aiohttp.ClientSession(headers=headers) as session:
         checks = await get_checks(session)
@@ -83,6 +84,7 @@ async def write_report(output_path):
             for s in states:
                 s["service"] = c["name"]
                 s["check_id"] = c["id"]
+                s["tags"] = ",".join(tag["name"] for tag in c["tags"])
                 day = datetime.fromtimestamp(s["timefrom"], timezone.utc).strftime(
                     "%Y-%m-%d"
                 )
