@@ -22,8 +22,8 @@ async def get_checks(session):
 
 
 async def get_outages(session, check_id):
-    from_ = settings.START_DATE.timestamp()
-    to_ = settings.END_DATE.timestamp()
+    from_ = int(settings.START_DATE.timestamp())
+    to_ = int(settings.END_DATE.timestamp())
     url = f"{BASE_URL}/summary.outage/{check_id}/?from={from_}&to={to_}"
     resp = await session.get(url)
     # print(resp.headers)
