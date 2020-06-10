@@ -198,8 +198,13 @@ def upload_report(output_path, prefix, display_day):
 
 def lambda_handler(event, context):
     components = get_components()
+    with open("components.json", "w") as output:
+        output.write(json.dumps(components))
     groups_by_id = find_groups(components)
     incidents = get_incidents()
+    with open("incidents.json", "w") as output:
+        output.write(json.dumps(incidents))
+    sys.exit(0)
     incidents_by_day = group_incidents_by_day(incidents)
 
     for day in timerange_for_report():

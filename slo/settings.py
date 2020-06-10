@@ -12,5 +12,5 @@ S3_BUCKET = os.environ['S3_BUCKET']
 # regen previous week on every run
 # to account for people filling in postmortems
 # end is exclusive so skips current day
-START_DATE = date.today() - timedelta(days=8)
+START_DATE = date.today() - timedelta(days=1095)
 END_DATE = date.today()
