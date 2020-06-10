@@ -22,6 +22,8 @@ you used for `S3_BUCKET`.
 
 ## SLO
 
+** Notice: We have stopped using StatusPage and thus this report is no longer run **
+
 slo_report.py pulls data from the Statuspage API, creates a JSON file, and
 uploads it to S3.
 
