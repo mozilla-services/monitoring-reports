@@ -6,19 +6,38 @@
 #    pip-compile-multi
 #
 aiohttp==3.6.2
-async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp
+    # via -r base.in
+async-timeout==3.0.1
+    # via aiohttp
+attrs==19.3.0
+    # via aiohttp
 boto3==1.10.40
-botocore==1.13.40         # via boto3, s3transfer
-chardet==3.0.4            # via aiohttp
-docutils==0.15.2          # via botocore
-idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, yarl
-jmespath==0.9.4           # via boto3, botocore
-multidict==4.7.1          # via aiohttp, yarl
-python-dateutil==2.8.0    # via botocore
-s3transfer==0.2.1         # via boto3
-six==1.13.0               # via python-dateutil
-typing-extensions==3.7.4.1  # via aiohttp
-urllib3==1.25.7           # via botocore
-yarl==1.4.2               # via aiohttp
+    # via -r base.in
+botocore==1.13.40
+    # via
+    #   boto3
+    #   s3transfer
+chardet==3.0.4
+    # via aiohttp
+docutils==0.15.2
+    # via botocore
+idna==2.8
+    # via yarl
+jmespath==0.9.4
+    # via
+    #   boto3
+    #   botocore
+multidict==4.7.1
+    # via
+    #   aiohttp
+    #   yarl
+python-dateutil==2.8.0
+    # via botocore
+s3transfer==0.2.1
+    # via boto3
+six==1.13.0
+    # via python-dateutil
+urllib3==1.25.8
+    # via botocore
+yarl==1.4.2
+    # via aiohttp
